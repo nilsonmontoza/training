@@ -6,7 +6,8 @@ semanas completadas como documentos JSON en disco.
 
 ## Qué hace
 
-- Muestra la rutina semanal fija (Lunes a Viernes, con Sábado/Domingo de descanso).
+- Permite crear, editar y eliminar rutinas semanales propias (nombre y
+  grupos musculares por día) desde un selector con botones `+`/`✎`.
 - Marca los días de entrenamiento completados.
 - Muestra los grupos musculares y ejercicios de cada día.
 - Guarda la semana en curso en el navegador (`localStorage`).
@@ -18,18 +19,24 @@ semanas completadas como documentos JSON en disco.
 1. Instala Node.js (no requiere dependencias externas).
 2. Ejecuta `node server.js` (o `npm start`) desde la carpeta del proyecto.
 3. Abre `http://localhost:3000` en el navegador.
-4. Haz clic en el checkbox de cada día para marcarlo como completado.
-5. Usa el botón `Finalizar semana` para archivar la semana y reiniciar el contador.
-6. En el historial puedes tocar el marcador (ej. `3/5`) para editar los días
+4. Elige una rutina en el selector, o usa `+` para crear una nueva: ponle
+   nombre y toca los grupos musculares de cada día (sin ninguno marcado,
+   el día queda como descanso). Usa `✎` para editar la rutina activa, y
+   dentro del formulario de edición el botón `Eliminar rutina` la borra
+   (siempre debe quedar al menos una).
+5. Haz clic en el checkbox de cada día para marcarlo como completado.
+6. Usa el botón `Finalizar semana` para archivar la semana y reiniciar el contador.
+7. En el historial puedes tocar el marcador (ej. `3/5`) para editar los días
    completados, o el botón `✕` para eliminar esa entrada.
 
 ## Estructura
 
 - `index.html` - interfaz completa con HTML, CSS y JavaScript.
 - `server.js` - servidor HTTP plano en Node.js: sirve `index.html` y expone
-  la API `/api/historial` (GET, POST, PUT/:id, DELETE/:id).
-- `data/historial/` - un archivo `.json` por semana completada (se crea
-  automáticamente al iniciar el servidor; no se versiona en git).
+  las APIs `/api/historial` y `/api/rutinas` (GET, POST, PUT/:id, DELETE/:id).
+- `data/historial/` y `data/rutinas/` - un archivo `.json` por documento
+  (se crean automáticamente al iniciar el servidor, con una rutina
+  "Mi rutina" de ejemplo la primera vez; no se versionan en git).
 
 ## Mejoras sugeridas
 
@@ -43,6 +50,6 @@ semanas completadas como documentos JSON en disco.
 - La semana en curso vive en `localStorage`; si abres la app desde otro
   navegador o equipo no la verás, pero el historial sí es compartido porque
   vive en el servidor.
-- El historial son archivos JSON planos en `data/historial/`; puedes
-  inspeccionarlos o respaldarlos copiando esa carpeta.
+- El historial y las rutinas son archivos JSON planos en `data/historial/`
+  y `data/rutinas/`; puedes inspeccionarlos o respaldarlos copiando esa carpeta.
 

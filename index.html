@@ -79,15 +79,91 @@
 
   main{ max-width: 720px; margin: 0 auto; padding: 24px 20px 0; }
 
-  button:focus-visible, input:focus-visible, .check:focus-visible{
+  select:focus-visible, button:focus-visible, input:focus-visible, .check:focus-visible{
     outline: 2px solid var(--hivis); outline-offset: 2px;
   }
 
-  .routine-tag{
-    font-size:11px; padding:4px 10px; border-radius:100px;
-    border:1px solid var(--rust-dim); color: var(--rust);
-    letter-spacing:.08em; text-transform:uppercase; white-space:nowrap;
+  /* --- Routine selector --- */
+  .selector{
+    display:flex; align-items:center; gap:10px; margin-bottom: 18px; flex-wrap:wrap;
   }
+  .selector label{ font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--steel); }
+  select{
+    appearance:none; -webkit-appearance:none;
+    background: var(--panel) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M1 1l5 5 5-5" stroke="%23f2efe6" stroke-width="2" fill="none"/></svg>') no-repeat right 14px center;
+    color: var(--chalk);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--rust);
+    padding: 10px 40px 10px 16px;
+    font-family:'Oswald', sans-serif;
+    font-size: 15px; letter-spacing:.03em; text-transform: uppercase;
+    border-radius: 4px;
+    cursor:pointer;
+    flex:1; min-width: 180px;
+  }
+  .icon-btn{
+    width:38px; height:38px; border-radius:6px; flex-shrink:0;
+    background: var(--panel); border:1px solid var(--line); color: var(--chalk);
+    font-size:16px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition: border-color .15s ease;
+  }
+  .icon-btn:hover{ border-color: var(--steel); }
+
+  /* --- Routine modal --- */
+  .modal-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(15,14,12,.72);
+    align-items:center; justify-content:center;
+    padding:20px; z-index:50;
+  }
+  .modal-backdrop:not([hidden]){ display:flex; }
+  .modal{
+    background: var(--panel); border:1px solid var(--line); border-radius:10px;
+    max-width:560px; width:100%; max-height:88vh; overflow-y:auto;
+  }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 20px; border-bottom:1px solid var(--line);
+  }
+  .modal-head h3{
+    margin:0; font-family:'Oswald', sans-serif; text-transform:uppercase;
+    letter-spacing:.05em; font-size:16px;
+  }
+  .modal-close{
+    width:26px; height:26px; border-radius:50%; flex-shrink:0;
+    background:transparent; border:none; color:var(--steel);
+    font-size:14px; cursor:pointer;
+  }
+  .modal-close:hover{ color: var(--chalk); background: var(--panel-raised); }
+  .modal-body{ padding:16px 20px; }
+  .field-label{
+    display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--steel); margin-bottom:6px;
+  }
+  #routineNameInput{
+    width:100%; background: var(--panel-raised); border:1px solid var(--line);
+    color: var(--chalk); padding:10px 12px; border-radius:6px; font-size:14px;
+    margin-bottom:20px; font-family:'Inter', sans-serif;
+  }
+  .day-editor-row{ margin-bottom:14px; }
+  .day-editor-row:last-child{ margin-bottom:0; }
+  .day-editor-row .der-label{
+    font-family:'Oswald', sans-serif; font-size:12.5px; letter-spacing:.04em;
+    text-transform:uppercase; color: var(--chalk-dim); margin-bottom:6px;
+  }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .group-chip{
+    font-size:12px; padding:5px 10px; border-radius:100px;
+    border:1px solid var(--line); background:transparent; color: var(--steel);
+    cursor:pointer; transition: all .15s ease;
+  }
+  .group-chip.on{ background: var(--hivis); border-color: var(--hivis); color:#1c1b19; font-weight:600; }
+  .modal-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 20px; border-top:1px solid var(--line); flex-wrap:wrap;
+  }
+  .modal-foot-right{ display:flex; gap:10px; margin-left:auto; }
 
   /* --- Week status bar --- */
   .week-bar{
@@ -232,7 +308,6 @@
     <div>
       <h1 class="display">Bitácora de<br>entrenamiento</h1>
       <div class="tagline">Marca, entrena, repite</div>
-      <span class="routine-tag" id="routineTag"></span>
     </div>
     <div class="plates">
       <div class="plates-label">Días completados</div>
@@ -243,6 +318,13 @@
 </header>
 
 <main>
+  <div class="selector">
+    <label for="routineSelect">Rutina</label>
+    <select id="routineSelect"></select>
+    <button type="button" class="icon-btn" id="addRoutineBtn" title="Agregar rutina" aria-label="Agregar rutina">+</button>
+    <button type="button" class="icon-btn" id="editRoutineBtn" title="Editar rutina" aria-label="Editar rutina">✎</button>
+  </div>
+
   <div class="week-bar">
     <div class="week-bar-top">
       <div class="info">Semana iniciada el <b id="weekStartLabel">—</b></div>
@@ -259,8 +341,29 @@
   </div>
 </main>
 
-<footer>La semana en curso se guarda en este navegador; el historial se guarda en el servidor. Cada 7 días la semana se cierra sola y se archiva; también puedes cerrarla antes con el botón.</footer>
+<footer>La semana en curso se guarda en este navegador; el historial y las rutinas se guardan en el servidor. Cada 7 días la semana se cierra sola y se archiva; también puedes cerrarla antes con el botón.</footer>
 <div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="routineModalBackdrop" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="routineModalTitle">Nueva rutina</h3>
+      <button type="button" class="modal-close" id="routineModalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label" for="routineNameInput">Nombre de la rutina</label>
+      <input type="text" id="routineNameInput" placeholder="Ej. Rutina de verano" maxlength="60">
+      <div id="routineDaysEditor"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn secondary" id="routineDeleteBtn" hidden>Eliminar rutina</button>
+      <div class="modal-foot-right">
+        <button type="button" class="btn secondary" id="routineCancelBtn">Cancelar</button>
+        <button type="button" class="btn" id="routineSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const exerciseBank = {
@@ -275,31 +378,27 @@ const exerciseBank = {
   "Pantorrilla": ["Elevación de talones de pie", "Elevación de talones sentado", "Elevación de talones en prensa"]
 };
 
-const routines = {
-  principal: {
-    label: "Mi rutina",
-    days: [
-      { day: "Lunes",     groups: ["Pecho", "Bíceps"] },
-      { day: "Martes",    groups: ["Cuádriceps", "Pantorrilla"] },
-      { day: "Miércoles", groups: ["Espalda", "Hombro", "Tríceps"] },
-      { day: "Jueves",    groups: ["Isquios", "Glúteo", "Pantorrilla"] },
-      { day: "Viernes",   groups: ["Pecho", "Bíceps", "Tríceps"] },
-      { day: "Sábado",    groups: [] },
-      { day: "Domingo",   groups: [] }
-    ]
-  }
-};
+const WEEK_DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const MUSCLE_GROUPS = Object.keys(exerciseBank);
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const CURRENT_KEY = "rutina:semana-actual";
 const HISTORY_API = "/api/historial";
+const ROUTINES_API = "/api/rutinas";
 
 // In-memory mirrors of persisted data
 let currentWeek = null;   // { routineKey, checkedDays: {day:true}, openDays:{day:true}, weekStart: isoString }
 let history = [];         // [{ id, weekStart, weekEnd, routineKey, routineLabel, completed, total }] cargado desde el servidor
+let routines = {};        // { [id]: { id, label, days } } cargado desde el servidor
 let storageReady = false;
 
-const routineTag = document.getElementById('routineTag');
+// Estado del formulario modal de rutina
+let editingRoutineId = null; // null = creando una rutina nueva
+let formDays = {};           // { [day]: Set(grupos) } mientras se edita el formulario
+
+const routineSelect = document.getElementById('routineSelect');
+const addRoutineBtn = document.getElementById('addRoutineBtn');
+const editRoutineBtn = document.getElementById('editRoutineBtn');
 const daysContainer = document.getElementById('days');
 const plateRow = document.getElementById('plateRow');
 const plateCount = document.getElementById('plateCount');
@@ -309,6 +408,15 @@ const closeWeekBtn = document.getElementById('closeWeekBtn');
 const progressFill = document.getElementById('progressFill');
 const historyList = document.getElementById('historyList');
 const toastEl = document.getElementById('toast');
+
+const routineModalBackdrop = document.getElementById('routineModalBackdrop');
+const routineModalTitle = document.getElementById('routineModalTitle');
+const routineNameInput = document.getElementById('routineNameInput');
+const routineDaysEditor = document.getElementById('routineDaysEditor');
+const routineDeleteBtn = document.getElementById('routineDeleteBtn');
+const routineCancelBtn = document.getElementById('routineCancelBtn');
+const routineSaveBtn = document.getElementById('routineSaveBtn');
+const routineModalClose = document.getElementById('routineModalClose');
 
 function showToast(msg){
   toastEl.textContent = msg;
@@ -327,7 +435,7 @@ function totalTrainingDays(routineKey){
 
 function newWeek(routineKey){
   return {
-    routineKey: routineKey || 'principal',
+    routineKey,
     checkedDays: {},
     openDays: {},
     weekStart: new Date().toISOString()
@@ -335,22 +443,27 @@ function newWeek(routineKey){
 }
 
 async function loadData(){
+  await loadRoutines();
+  const fallbackId = Object.keys(routines)[0];
+
   try{
     const raw = localStorage.getItem(CURRENT_KEY);
-    currentWeek = raw ? JSON.parse(raw) : newWeek('principal');
+    currentWeek = raw ? JSON.parse(raw) : newWeek(fallbackId);
   }catch(e){
-    currentWeek = newWeek('principal');
+    currentWeek = newWeek(fallbackId);
   }
+  if(!routines[currentWeek.routineKey]) currentWeek.routineKey = fallbackId;
 
   await loadHistory();
 
   // Auto-close week if 7+ days have passed since it started
   const started = new Date(currentWeek.weekStart).getTime();
-  if(Date.now() - started >= WEEK_MS){
+  if(currentWeek.routineKey && Date.now() - started >= WEEK_MS){
     await archiveWeek(true);
   }
 
   storageReady = true;
+  renderRoutineOptions();
   render();
 }
 
@@ -358,6 +471,29 @@ async function saveCurrentWeek(){
   try{
     localStorage.setItem(CURRENT_KEY, JSON.stringify(currentWeek));
   }catch(e){ console.error('No se pudo guardar la semana actual', e); }
+}
+
+async function loadRoutines(){
+  try{
+    const res = await fetch(ROUTINES_API);
+    const list = res.ok ? await res.json() : [];
+    routines = {};
+    list.forEach(r => { routines[r.id] = r; });
+  }catch(e){
+    console.error('No se pudieron cargar las rutinas desde el servidor', e);
+    routines = {};
+  }
+}
+
+function renderRoutineOptions(){
+  routineSelect.innerHTML = "";
+  Object.values(routines).forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = r.label;
+    routineSelect.appendChild(opt);
+  });
+  if(currentWeek.routineKey) routineSelect.value = currentWeek.routineKey;
 }
 
 async function loadHistory(){
@@ -439,6 +575,140 @@ async function deleteHistoryEntry(id){
 
 closeWeekBtn.addEventListener('click', () => archiveWeek(false));
 
+routineSelect.addEventListener('change', async (e) => {
+  currentWeek.routineKey = e.target.value;
+  await saveCurrentWeek();
+  render();
+});
+
+function openRoutineForm(routineId){
+  editingRoutineId = routineId || null;
+  const existing = editingRoutineId ? routines[editingRoutineId] : null;
+
+  routineModalTitle.textContent = existing ? 'Editar rutina' : 'Nueva rutina';
+  routineNameInput.value = existing ? existing.label : '';
+  routineDeleteBtn.hidden = !existing;
+
+  formDays = {};
+  WEEK_DAYS.forEach(day => {
+    const existingDay = existing ? existing.days.find(d => d.day === day) : null;
+    formDays[day] = new Set(existingDay ? existingDay.groups : []);
+  });
+
+  renderRoutineDaysEditor();
+  routineModalBackdrop.hidden = false;
+  routineNameInput.focus();
+}
+
+function closeRoutineForm(){
+  routineModalBackdrop.hidden = true;
+  editingRoutineId = null;
+}
+
+function renderRoutineDaysEditor(){
+  routineDaysEditor.innerHTML = "";
+  WEEK_DAYS.forEach(day => {
+    const row = document.createElement('div');
+    row.className = 'day-editor-row';
+
+    const label = document.createElement('div');
+    label.className = 'der-label';
+    label.textContent = day;
+    row.appendChild(label);
+
+    const chipRow = document.createElement('div');
+    chipRow.className = 'chip-row';
+    MUSCLE_GROUPS.forEach(group => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'group-chip' + (formDays[day].has(group) ? ' on' : '');
+      chip.textContent = group;
+      chip.onclick = () => {
+        if(formDays[day].has(group)) formDays[day].delete(group);
+        else formDays[day].add(group);
+        chip.classList.toggle('on');
+      };
+      chipRow.appendChild(chip);
+    });
+    row.appendChild(chipRow);
+
+    routineDaysEditor.appendChild(row);
+  });
+}
+
+async function saveRoutineForm(){
+  const label = routineNameInput.value.trim();
+  if(!label){
+    showToast('Ponle un nombre a la rutina');
+    routineNameInput.focus();
+    return;
+  }
+
+  const days = WEEK_DAYS.map(day => ({ day, groups: Array.from(formDays[day]) }));
+  const payload = { label, days };
+
+  try{
+    const res = editingRoutineId
+      ? await fetch(`${ROUTINES_API}/${editingRoutineId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      : await fetch(ROUTINES_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+    if(!res.ok){ showToast('No se pudo guardar la rutina'); return; }
+    const saved = await res.json();
+    routines[saved.id] = saved;
+    currentWeek.routineKey = saved.id;
+    await saveCurrentWeek();
+    renderRoutineOptions();
+    closeRoutineForm();
+    render();
+    showToast('Rutina guardada');
+  }catch(e){
+    console.error('No se pudo guardar la rutina', e);
+    showToast('No se pudo guardar la rutina');
+  }
+}
+
+async function deleteRoutineFromForm(){
+  if(!editingRoutineId) return;
+  if(Object.keys(routines).length <= 1){
+    showToast('Debe quedar al menos una rutina');
+    return;
+  }
+  if(!confirm('¿Eliminar esta rutina? Esta acción no se puede deshacer.')) return;
+
+  try{
+    const res = await fetch(`${ROUTINES_API}/${editingRoutineId}`, { method: 'DELETE' });
+    if(!res.ok){ showToast('No se pudo eliminar la rutina'); return; }
+    delete routines[editingRoutineId];
+    if(currentWeek.routineKey === editingRoutineId){
+      currentWeek = newWeek(Object.keys(routines)[0]);
+      await saveCurrentWeek();
+    }
+    renderRoutineOptions();
+    closeRoutineForm();
+    render();
+    showToast('Rutina eliminada');
+  }catch(e){
+    console.error('No se pudo eliminar la rutina', e);
+    showToast('No se pudo eliminar la rutina');
+  }
+}
+
+addRoutineBtn.addEventListener('click', () => openRoutineForm(null));
+editRoutineBtn.addEventListener('click', () => openRoutineForm(currentWeek.routineKey));
+routineCancelBtn.addEventListener('click', closeRoutineForm);
+routineModalClose.addEventListener('click', closeRoutineForm);
+routineModalBackdrop.addEventListener('click', (e) => { if(e.target === routineModalBackdrop) closeRoutineForm(); });
+routineSaveBtn.addEventListener('click', saveRoutineForm);
+routineDeleteBtn.addEventListener('click', deleteRoutineFromForm);
+
 async function toggleCheck(day){
   currentWeek.checkedDays[day] = !currentWeek.checkedDays[day];
   await saveCurrentWeek();
@@ -453,7 +723,18 @@ function toggleOpen(day){
 function render(){
   if(!storageReady) return;
   const routine = routines[currentWeek.routineKey];
-  routineTag.textContent = routine.label;
+
+  if(!routine){
+    daysContainer.innerHTML = '<div class="history-empty">No hay ninguna rutina todavía. Usa el botón "+" para crear una.</div>';
+    plateCount.textContent = '0';
+    plateTotal.textContent = '0';
+    progressFill.style.width = '0%';
+    plateRow.innerHTML = '';
+    weekStartLabel.textContent = '—';
+    renderHistoryList();
+    return;
+  }
+
   weekStartLabel.textContent = fmtDate(currentWeek.weekStart);
 
   const total = totalTrainingDays(currentWeek.routineKey);
@@ -534,7 +815,10 @@ function render(){
     daysContainer.appendChild(card);
   });
 
-  // History list
+  renderHistoryList();
+}
+
+function renderHistoryList(){
   historyList.innerHTML = "";
   if(history.length === 0){
     historyList.innerHTML = '<div class="history-empty">Aún no hay semanas cerradas.</div>';

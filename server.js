@@ -1,16 +1,74 @@
 // Servidor plano en Node.js puro (sin dependencias) que sirve index.html
-// y expone un CRUD básico sobre el historial de rutinas completadas.
-// Cada semana finalizada se guarda como un documento JSON individual
-// en data/historial/<id>.json.
+// y expone un CRUD básico sobre dos colecciones: el historial de rutinas
+// completadas y las rutinas mismas. Cada documento se guarda como un
+// archivo JSON individual en data/<coleccion>/<id>.json.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data', 'historial');
+const DATA_ROOT = path.join(__dirname, 'data');
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
+function isValidId(id) {
+  return typeof id === 'string' && /^[a-zA-Z0-9-]+$/.test(id);
+}
+
+function makeStore(name, sortFn) {
+  const dir = path.join(DATA_ROOT, name);
+  fs.mkdirSync(dir, { recursive: true });
+  const docPath = (id) => path.join(dir, `${id}.json`);
+
+  return {
+    list() {
+      const docs = fs.readdirSync(dir)
+        .filter((f) => f.endsWith('.json'))
+        .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+      return sortFn ? docs.sort(sortFn) : docs;
+    },
+    get(id) {
+      if (!isValidId(id) || !fs.existsSync(docPath(id))) return null;
+      return JSON.parse(fs.readFileSync(docPath(id), 'utf8'));
+    },
+    create(id, data) {
+      const doc = { ...data, id };
+      fs.writeFileSync(docPath(id), JSON.stringify(doc, null, 2));
+      return doc;
+    },
+    update(id, patch) {
+      const existing = this.get(id);
+      if (!existing) return null;
+      const updated = { ...existing, ...patch, id };
+      fs.writeFileSync(docPath(id), JSON.stringify(updated, null, 2));
+      return updated;
+    },
+    remove(id) {
+      if (!isValidId(id) || !fs.existsSync(docPath(id))) return false;
+      fs.unlinkSync(docPath(id));
+      return true;
+    }
+  };
+}
+
+const historialStore = makeStore('historial', (a, b) => new Date(b.weekStart) - new Date(a.weekStart));
+const rutinasStore = makeStore('rutinas');
+
+const DEFAULT_ROUTINE = {
+  label: 'Mi rutina',
+  days: [
+    { day: 'Lunes', groups: ['Pecho', 'Bíceps'] },
+    { day: 'Martes', groups: ['Cuádriceps', 'Pantorrilla'] },
+    { day: 'Miércoles', groups: ['Espalda', 'Hombro', 'Tríceps'] },
+    { day: 'Jueves', groups: ['Isquios', 'Glúteo', 'Pantorrilla'] },
+    { day: 'Viernes', groups: ['Pecho', 'Bíceps', 'Tríceps'] },
+    { day: 'Sábado', groups: [] },
+    { day: 'Domingo', groups: [] }
+  ]
+};
+
+if (rutinasStore.list().length === 0) {
+  rutinasStore.create('principal', DEFAULT_ROUTINE);
+}
 
 function sendJSON(res, status, data) {
   const body = data === null ? '' : JSON.stringify(data);
@@ -30,68 +88,36 @@ function readBody(req) {
   });
 }
 
-function isValidId(id) {
-  return typeof id === 'string' && /^[a-zA-Z0-9-]+$/.test(id);
-}
-
-function docPath(id) {
-  return path.join(DATA_DIR, `${id}.json`);
-}
-
-function listHistorial() {
-  return fs.readdirSync(DATA_DIR)
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8')))
-    .sort((a, b) => new Date(b.weekStart) - new Date(a.weekStart));
-}
-
-async function handleApi(req, res, pathname) {
-  const parts = pathname.split('/').filter(Boolean); // ["api", "historial", ":id"?]
+async function handleCollection(req, res, store, parts, opts) {
   const id = parts[2];
 
   if (req.method === 'GET' && parts.length === 2) {
-    return sendJSON(res, 200, listHistorial());
+    return sendJSON(res, 200, store.list());
   }
 
   if (req.method === 'GET' && parts.length === 3) {
-    if (!isValidId(id) || !fs.existsSync(docPath(id))) {
-      return sendJSON(res, 404, { error: 'no encontrado' });
-    }
-    return sendJSON(res, 200, JSON.parse(fs.readFileSync(docPath(id), 'utf8')));
+    const doc = store.get(id);
+    return doc ? sendJSON(res, 200, doc) : sendJSON(res, 404, { error: 'no encontrado' });
   }
 
   if (req.method === 'POST' && parts.length === 2) {
     const body = JSON.parse((await readBody(req)) || '{}');
-    const doc = {
-      id: crypto.randomUUID(),
-      weekStart: body.weekStart,
-      weekEnd: body.weekEnd,
-      routineKey: body.routineKey,
-      routineLabel: body.routineLabel,
-      completed: body.completed,
-      total: body.total
-    };
-    fs.writeFileSync(docPath(doc.id), JSON.stringify(doc, null, 2));
+    const doc = store.create(crypto.randomUUID(), body);
     return sendJSON(res, 201, doc);
   }
 
   if (req.method === 'PUT' && parts.length === 3) {
-    if (!isValidId(id) || !fs.existsSync(docPath(id))) {
-      return sendJSON(res, 404, { error: 'no encontrado' });
-    }
-    const existing = JSON.parse(fs.readFileSync(docPath(id), 'utf8'));
     const body = JSON.parse((await readBody(req)) || '{}');
-    const updated = { ...existing, ...body, id };
-    fs.writeFileSync(docPath(id), JSON.stringify(updated, null, 2));
-    return sendJSON(res, 200, updated);
+    const updated = store.update(id, body);
+    return updated ? sendJSON(res, 200, updated) : sendJSON(res, 404, { error: 'no encontrado' });
   }
 
   if (req.method === 'DELETE' && parts.length === 3) {
-    if (!isValidId(id) || !fs.existsSync(docPath(id))) {
-      return sendJSON(res, 404, { error: 'no encontrado' });
+    if (opts && opts.keepAtLeastOne && store.list().length <= 1) {
+      return sendJSON(res, 400, { error: 'debe quedar al menos una rutina' });
     }
-    fs.unlinkSync(docPath(id));
-    return sendJSON(res, 200, { ok: true });
+    const ok = store.remove(id);
+    return ok ? sendJSON(res, 200, { ok: true }) : sendJSON(res, 404, { error: 'no encontrado' });
   }
 
   return sendJSON(res, 404, { error: 'ruta no encontrada' });
@@ -110,10 +136,13 @@ function serveIndex(res) {
 
 const server = http.createServer(async (req, res) => {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  const parts = pathname.split('/').filter(Boolean);
 
   try {
-    if (pathname.startsWith('/api/historial')) {
-      await handleApi(req, res, pathname);
+    if (parts[0] === 'api' && parts[1] === 'historial') {
+      await handleCollection(req, res, historialStore, parts);
+    } else if (parts[0] === 'api' && parts[1] === 'rutinas') {
+      await handleCollection(req, res, rutinasStore, parts, { keepAtLeastOne: true });
     } else if (pathname === '/' || pathname === '/index.html') {
       serveIndex(res);
     } else {
