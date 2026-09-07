@@ -9,10 +9,13 @@ semanas completadas como documentos JSON en disco.
 - Permite crear, editar y eliminar rutinas semanales propias (nombre y
   grupos musculares por día) desde un selector con botones `+`/`✎`.
 - Marca los días de entrenamiento completados.
-- Muestra los grupos musculares y ejercicios de cada día.
+- Muestra los grupos musculares y ejercicios de cada día, con un campo de
+  peso (kg) por ejercicio que se conserva de una semana a la otra para ver
+  si subes, bajas o mantienes.
 - Guarda la semana en curso en el navegador (`localStorage`).
 - Archiva las semanas cerradas en un historial persistido en el servidor,
-  con CRUD básico (crear al finalizar, editar días completados, eliminar).
+  con CRUD básico (crear al finalizar, editar días completados, eliminar),
+  incluyendo una foto de los pesos usados esa semana para ver el progreso.
 
 ## Uso
 
