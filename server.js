@@ -6,6 +6,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { exec } = require('child_process');
 
 const PORT = process.env.PORT || 3000;
 const DATA_ROOT = path.join(__dirname, 'data');
@@ -52,6 +53,7 @@ function makeStore(name, sortFn) {
 
 const historialStore = makeStore('historial', (a, b) => new Date(b.weekStart) - new Date(a.weekStart));
 const rutinasStore = makeStore('rutinas');
+const ejerciciosStore = makeStore('ejercicios');
 
 const DEFAULT_ROUTINE = {
   label: 'Mi rutina',
@@ -66,8 +68,37 @@ const DEFAULT_ROUTINE = {
   ]
 };
 
+// Catálogo de ejercicios de arranque, uno por grupo muscular de la rutina
+// original. Vive en la base de datos (no hardcodeado en el frontend) para
+// que se puedan agregar ejercicios propios desde la interfaz.
+const DEFAULT_EXERCISES = {
+  'Pecho': ['Press de banca plano', 'Press inclinado con mancuerna', 'Aperturas con mancuerna', 'Fondos en paralelas'],
+  'Bíceps': ['Curl con barra', 'Curl martillo', 'Curl concentrado', 'Curl en banco Scott'],
+  'Espalda': ['Dominadas (o jalón al pecho)', 'Remo con barra', 'Remo en polea baja', 'Jalón al pecho agarre ancho'],
+  'Hombro': ['Press militar', 'Elevaciones laterales', 'Pájaros (deltoide posterior)', 'Press Arnold'],
+  'Tríceps': ['Press francés', 'Extensión en polea (cuerda)', 'Fondos en banco', 'Press cerrado'],
+  'Cuádriceps': ['Sentadilla', 'Prensa de piernas', 'Extensión de cuádriceps', 'Sentadilla búlgara'],
+  'Isquios': ['Peso muerto rumano', 'Curl femoral acostado', 'Curl femoral sentado', 'Buenos días'],
+  'Glúteo': ['Hip thrust', 'Puente de glúteo', 'Patada de glúteo en polea', 'Zancadas'],
+  'Pantorrilla': ['Elevación de talones de pie', 'Elevación de talones sentado', 'Elevación de talones en prensa']
+};
+
+function slugify(text) {
+  return text
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 if (rutinasStore.list().length === 0) {
   rutinasStore.create('principal', DEFAULT_ROUTINE);
+}
+
+if (ejerciciosStore.list().length === 0) {
+  Object.entries(DEFAULT_EXERCISES).forEach(([group, exercises]) => {
+    ejerciciosStore.create(slugify(group), { group, exercises });
+  });
 }
 
 function sendJSON(res, status, data) {
@@ -143,6 +174,8 @@ const server = http.createServer(async (req, res) => {
       await handleCollection(req, res, historialStore, parts);
     } else if (parts[0] === 'api' && parts[1] === 'rutinas') {
       await handleCollection(req, res, rutinasStore, parts, { keepAtLeastOne: true });
+    } else if (parts[0] === 'api' && parts[1] === 'ejercicios') {
+      await handleCollection(req, res, ejerciciosStore, parts);
     } else if (pathname === '/' || pathname === '/index.html') {
       serveIndex(res);
     } else {
@@ -155,6 +188,15 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+function openBrowser(url) {
+  const cmd = process.platform === 'darwin' ? `open "${url}"`
+    : process.platform === 'win32' ? `start "" "${url}"`
+    : `xdg-open "${url}"`;
+  exec(cmd, () => {});
+}
+
 server.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  const url = `http://localhost:${PORT}`;
+  console.log(`Servidor escuchando en ${url}`);
+  openBrowser(url);
 });
