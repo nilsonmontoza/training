@@ -1,8 +1,9 @@
 # Training
 
-Una bitácora personal de entrenamiento basada en una sola página web, con un
-pequeño servidor Node.js (sin dependencias) que guarda el historial de
-semanas completadas como documentos JSON en disco.
+Una bitácora personal de entrenamiento en una sola página web (HTML, CSS y
+JavaScript, sin frameworks ni backend). Todo se guarda en el navegador con
+`localStorage`, así que corre igual abriendo el archivo directo o publicada
+en GitHub Pages.
 
 ## Qué hace
 
@@ -14,19 +15,18 @@ semanas completadas como documentos JSON en disco.
   si subes, bajas o mantienes.
 - Deja agregar tus propios ejercicios a cada grupo muscular (además de los
   ejercicios base que trae el catálogo).
-- Guarda la semana en curso en el navegador (`localStorage`).
-- Archiva las semanas cerradas en un historial persistido en el servidor,
-  con CRUD básico (crear al finalizar, editar días completados, eliminar),
-  incluyendo una foto de los pesos usados esa semana.
+- Archiva las semanas cerradas en un historial con CRUD básico (crear al
+  finalizar, editar días completados, eliminar), incluyendo una foto de los
+  pesos usados esa semana.
 - Muestra una gráfica simple (sparkline) de progreso por ejercicio, con la
   diferencia entre el primer y el último peso registrado.
-- Al iniciar el servidor, abre automáticamente el navegador.
 
 ## Uso
 
-1. Instala Node.js (no requiere dependencias externas).
-2. Ejecuta `node server.js` (o `npm start`) desde la carpeta del proyecto;
-   se abre solo el navegador en `http://localhost:3000` (si no, ábrelo a mano).
+1. Abre `index.html` directo en el navegador, o publícalo con GitHub Pages
+   (Settings → Pages → Deploy from a branch → `main` / `/root`).
+2. La primera vez se crea sola una rutina de ejemplo ("Mi rutina") y su
+   catálogo de ejercicios; puedes editarla o crear una nueva con `+`.
 3. Elige una rutina en el selector, o usa `+` para crear una nueva: ponle
    nombre y toca los grupos musculares de cada día (sin ninguno marcado,
    el día queda como descanso). Usa `✎` para editar la rutina activa, y
@@ -44,28 +44,20 @@ semanas completadas como documentos JSON en disco.
 
 ## Estructura
 
-- `index.html` - interfaz completa con HTML, CSS y JavaScript.
-- `server.js` - servidor HTTP plano en Node.js: sirve `index.html`, abre el
-  navegador al arrancar, y expone las APIs `/api/historial`, `/api/rutinas`
-  y `/api/ejercicios` (GET, POST, PUT/:id, DELETE/:id).
-- `data/historial/`, `data/rutinas/` y `data/ejercicios/` - un archivo
-  `.json` por documento (se crean automáticamente al iniciar el servidor,
-  con una rutina "Mi rutina" y un catálogo de ejercicios base la primera
-  vez; no se versionan en git).
+- `index.html` - toda la aplicación: HTML, CSS y JavaScript en un solo
+  archivo, sin dependencias externas (salvo la tipografía de Google Fonts).
 
 ## Mejoras sugeridas
 
-- Permitir sincronización entre dispositivos usando una base de datos en la nube.
-- Añadir import/export JSON para respaldos manuales del historial.
-- Mover también la semana en curso al servidor, si se quiere usar desde
-  varios dispositivos.
+- Añadir import/export JSON para respaldos manuales (por si limpias el
+  navegador o cambias de equipo).
+- Permitir sincronización entre dispositivos, si algún día hace falta usar
+  la app desde más de un navegador.
 
 ## Notas
 
-- La semana en curso vive en `localStorage`; si abres la app desde otro
-  navegador o equipo no la verás, pero el historial, las rutinas y el
-  catálogo de ejercicios sí son compartidos porque viven en el servidor.
-- El historial, las rutinas y los ejercicios son archivos JSON planos en
-  `data/historial/`, `data/rutinas/` y `data/ejercicios/`; puedes
-  inspeccionarlos o respaldarlos copiando esa carpeta.
-
+- Todo (rutinas, ejercicios, historial y la semana en curso) vive en
+  `localStorage`, por navegador y por equipo: si abres la app en otro
+  navegador o limpias los datos del sitio, empieza de cero.
+- No hay servidor ni base de datos real: es la opción más simple para uso
+  personal y para poder alojarlo gratis en GitHub Pages.
