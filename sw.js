@@ -1,6 +1,7 @@
 // Service worker simple: cachea el shell de la app para que abra offline.
-// Sube CACHE_NAME cuando cambies index.html u otros archivos cacheados.
-const CACHE_NAME = 'entrenamiento-v1';
+// Sube CACHE_NAME cuando cambies los archivos cacheados (fuerza a los
+// navegadores a descartar la copia vieja en vez de quedarse pegados a ella).
+const CACHE_NAME = 'entrenamiento-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -27,6 +28,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // El HTML de la página siempre se pide primero a la red (para que los
+  // cambios se vean de inmediato) y solo se usa la copia guardada si no
+  // hay conexión. Los demás archivos (íconos, manifest) sí son cache-first,
+  // ya que casi nunca cambian.
+  if(event.request.mode === 'navigate'){
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
