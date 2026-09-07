@@ -527,7 +527,8 @@ function seedDbIfEmpty(){
 }
 
 // In-memory mirrors of persisted data
-let currentWeek = null;   // { routineKey, checkedDays: {day:true}, openDays:{day:true}, weekStart: isoString }
+let currentWeek = null;   // { routineKey, checkedDays: {day:true}, weekStart: isoString }
+let openDays = {};        // { day: true } — solo en memoria, no se guarda: siempre arranca colapsado
 let history = [];         // [{ id, weekStart, weekEnd, routineKey, routineLabel, completed, total }] cargado de localStorage
 let routines = {};        // { [id]: { id, label, days } } cargado de localStorage
 let exerciseBank = {};    // { [grupoMuscular]: [ejercicio, ...] } cargado de localStorage
@@ -580,7 +581,6 @@ function newWeek(routineKey, weights){
   return {
     routineKey,
     checkedDays: {},
-    openDays: {},
     weekStart: new Date().toISOString(),
     weights: weights ? { ...weights } : {}
   };
@@ -832,7 +832,7 @@ async function toggleCheck(day){
 }
 
 function toggleOpen(day){
-  currentWeek.openDays[day] = !currentWeek.openDays[day];
+  openDays[day] = !openDays[day];
   render();
 }
 
@@ -870,7 +870,7 @@ function render(){
   routine.days.forEach(d => {
     const isRest = d.groups.length === 0;
     const isChecked = !!currentWeek.checkedDays[d.day];
-    const isOpen = !!currentWeek.openDays[d.day];
+    const isOpen = !!openDays[d.day];
 
     const card = document.createElement('div');
     card.className = 'day' + (isChecked ? ' checked' : '') + (isOpen && !isRest ? ' open' : '');
