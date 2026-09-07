@@ -260,33 +260,22 @@ const exerciseBank = {
   "Bíceps": ["Curl con barra", "Curl martillo", "Curl concentrado", "Curl en banco Scott"],
   "Espalda": ["Dominadas (o jalón al pecho)", "Remo con barra", "Remo en polea baja", "Jalón al pecho agarre ancho"],
   "Hombro": ["Press militar", "Elevaciones laterales", "Pájaros (deltoide posterior)", "Press Arnold"],
-  "Pierna": ["Sentadilla", "Prensa de piernas", "Peso muerto rumano", "Zancadas con mancuerna"],
   "Tríceps": ["Press francés", "Extensión en polea (cuerda)", "Fondos en banco", "Press cerrado"],
-  "Core": ["Plancha", "Crunch abdominal", "Elevación de piernas colgado", "Russian twist"],
-  "Cardio": ["Cinta / trote 25-30 min", "Bicicleta estática", "Remo (máquina)", "Saltar cuerda intervalos"]
+  "Cuádriceps": ["Sentadilla", "Prensa de piernas", "Extensión de cuádriceps", "Sentadilla búlgara"],
+  "Isquios": ["Peso muerto rumano", "Curl femoral acostado", "Curl femoral sentado", "Buenos días"],
+  "Glúteo": ["Hip thrust", "Puente de glúteo", "Patada de glúteo en polea", "Zancadas"],
+  "Pantorrilla": ["Elevación de talones de pie", "Elevación de talones sentado", "Elevación de talones en prensa"]
 };
 
 const routines = {
-  opcion1: {
-    label: "Opción 1",
+  principal: {
+    label: "Mi rutina",
     days: [
       { day: "Lunes",     groups: ["Pecho", "Bíceps"] },
-      { day: "Martes",    groups: ["Espalda", "Hombro"] },
-      { day: "Miércoles", groups: ["Pierna"] },
-      { day: "Jueves",    groups: ["Tríceps", "Core"] },
-      { day: "Viernes",   groups: ["Cardio"] },
-      { day: "Sábado",    groups: ["Pierna", "Core"] },
-      { day: "Domingo",   groups: [] }
-    ]
-  },
-  opcion2: {
-    label: "Opción 2 · Dios Griego",
-    days: [
-      { day: "Lunes",     groups: ["Pecho", "Tríceps"] },
-      { day: "Martes",    groups: ["Espalda", "Bíceps"] },
-      { day: "Miércoles", groups: ["Pierna"] },
-      { day: "Jueves",    groups: ["Hombro", "Core"] },
-      { day: "Viernes",   groups: ["Pecho", "Tríceps"] },
+      { day: "Martes",    groups: ["Cuádriceps", "Pantorrilla"] },
+      { day: "Miércoles", groups: ["Espalda", "Hombro", "Tríceps"] },
+      { day: "Jueves",    groups: ["Isquios", "Glúteo", "Pantorrilla"] },
+      { day: "Viernes",   groups: ["Pecho", "Bíceps", "Tríceps"] },
       { day: "Sábado",    groups: [] },
       { day: "Domingo",   groups: [] }
     ]
@@ -337,7 +326,7 @@ function totalTrainingDays(routineKey){
 
 function newWeek(routineKey){
   return {
-    routineKey: routineKey || 'opcion1',
+    routineKey: routineKey || 'principal',
     checkedDays: {},
     openDays: {},
     weekStart: new Date().toISOString()
@@ -347,9 +336,9 @@ function newWeek(routineKey){
 async function loadData(){
   try{
     const raw = localStorage.getItem(CURRENT_KEY);
-    currentWeek = raw ? JSON.parse(raw) : newWeek('opcion1');
+    currentWeek = raw ? JSON.parse(raw) : newWeek('principal');
   }catch(e){
-    currentWeek = newWeek('opcion1');
+    currentWeek = newWeek('principal');
   }
   try{
     const raw = localStorage.getItem(HISTORY_KEY);
