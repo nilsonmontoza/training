@@ -1,7 +1,7 @@
 // Service worker simple: cachea el shell de la app para que abra offline.
 // Sube CACHE_NAME cuando cambies los archivos cacheados (fuerza a los
 // navegadores a descartar la copia vieja en vez de quedarse pegados a ella).
-const CACHE_NAME = 'entrenamiento-v2';
+const CACHE_NAME = 'entrenamiento-v3';
 const ASSETS = [
   './',
   './index.html',
